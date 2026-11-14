@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AERONEX | Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: #eaf5ff;
+        font-family: Inter, Arial, sans-serif;
+        background:
+          radial-gradient(ellipse at 80% 0%, #123b58 0%, transparent 42%),
+          radial-gradient(ellipse at 0% 80%, #102d43 0%, transparent 40%),
+          #07111f;
+        min-height: 100vh;
+      }
+      .glass {
+        background: rgba(17, 35, 54, 0.76);
+        border: 1px solid rgba(135, 190, 220, 0.15);
+        backdrop-filter: blur(18px);
+        border-radius: 20px;
+        box-shadow: 0 12px 40px #0003;
+      }
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 245px;
+        padding: 28px 20px;
+        background: rgba(7, 17, 31, 0.88);
+        border-right: 1px solid #ffffff14;
+        z-index: 5;
+      }
+      .main {
+        margin-left: 245px;
+        padding: 32px;
+        max-width: 1700px;
+      }
+      .nav {
+        display: flex;
+        gap: 13px;
+        align-items: center;
+        padding: 14px;
+        border-radius: 12px;
+        color: #9eb4c9;
+        text-decoration: none;
+        margin: 8px 0;
+        transition: 0.2s;
+      }
+      .nav:hover,
+      .nav.active {
+        background: #12334b;
+        color: #5de5ff;
+      }
+      .metric {
+        padding: 22px;
+        min-height: 145px;
+      }
+      .metric small {
+        color: #9eb4c9;
+      }
+      .metric strong {
+        display: block;
+        font-size: 30px;
+        margin-top: 14px;
+      }
+      .pill {
+        font-size: 11px;
+        padding: 6px 10px;
+        border-radius: 30px;
+        background: #15394b;
+        color: #64e7ff;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        background: #fb7185;
+      }
+      .dot.on {
+        background: #34d399;
+        box-shadow: 0 0 12px #34d399;
+      }
+      button {
+        cursor: pointer;
+      }
+      @media (max-width: 850px) {
+        .sidebar {
+          position: relative;
+          width: 100%;
+          height: auto;
+          padding: 14px;
+        }
+        .sidebar .links {
+          display: flex;
+          flex-wrap: wrap;
+        }
+        .main {
+          margin: 0;
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="mb-9">
+        <div class="text-3xl font-black tracking-widest text-cyan-300">
+          AERONEX
+        </div>
+        <div class="text-xs tracking-widest text-slate-400 mt-2">
+          SMART CLIMATE SYSTEM
+        </div>
+        <div class="text-xs text-slate-500 mt-1">GEDUNG SRURI ARIPIN</div>
+      </div>
+      <div class="text-xs text-slate-500 uppercase tracking-widest mb-3">
+        Navigation
+      </div>
+      <div class="links">
+        <a class="nav active" href="index.html">◈ Command Center</a>
+        <a class="nav" href="ac.html">◉ Live View</a>
+        <a class="nav" href="remote.html">⌘ Smart Remote</a>
+      </div>
+      <div class="glass p-4 mt-10">
+        <div class="text-xs text-slate-400">SYSTEM STATUS</div>
+        <div class="mt-3 flex items-center gap-2">
+          <span class="dot" id="sideDot"></span>
+          <span id="sideStatus" class="text-sm">Connecting...</span>
+        </div>
+        <div class="text-xs text-slate-500 mt-3">AERONEX IoT Engine</div>
+      </div>
+      <div class="absolute bottom-7 left-6 text-xs text-slate-600">
+        INTELLIGENT • CONNECTED • AUTOMATED
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="flex flex-wrap justify-between items-center gap-4 mb-8">
+        <div>
+          <div class="text-cyan-300 text-xs tracking-[.3em] mb-2">
+            SMART BUILDING TECHNOLOGY
+          </div>
+          <h1 class="text-3xl md:text-4xl font-bold">AERONEX Command Center</h1>
+          <p class="text-slate-400 mt-2">
+            Intelligent climate monitoring and control system
+          </p>
+        </div>
+        <div class="glass px-5 py-3">
+          <div class="text-xs text-slate-400">CONNECTION</div>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="dot" id="topDot"></span>
+            <span id="connection">Disconnected</span>
+          </div>
+        </div>
+      </header>
+
+      <section
+        class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6"
+      >
+        <div class="glass metric">
+          <small>AC POWER</small>
+          <strong id="power">OFF</strong>
+          <span class="pill" id="powerLabel">Standby</span>
+        </div>
+        <div class="glass metric">
+          <small>ROOM TEMPERATURE</small>
+          <strong><span id="roomTemp">32.0</span>°C</strong>
+          <span class="text-xs text-slate-400"
+            >Target: <span id="targetTemp">24</span>°C</span
+          >
+        </div>
+        <div class="glass metric">
+          <small>FAN SPEED</small>
+          <strong id="fan">AUTO</strong>
+          <span class="text-xs text-slate-400"
+            ><span id="rpm">0</span> RPM</span
+          >
+        </div>
+        <div class="glass metric">
+          <small>POWER CONSUMPTION</small>
+          <strong
+            ><span id="usage">0.00</span>
+            <span class="text-base">kW</span></strong
+          >
+          <span class="text-xs text-slate-400">Live energy usage</span>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 xl:grid-cols-3 gap-5 mb-6">
+        <div class="glass p-6 xl:col-span-2">
+          <div class="flex justify-between items-center mb-5">
+            <div>
+              <h2 class="font-semibold text-lg">Climate Performance</h2>
+              <p class="text-xs text-slate-400 mt-1">
+                Live room temperature monitoring
+              </p>
+            </div>
+            <span class="pill">LIVE DATA</span>
+          </div>
+          <div style="height: 280px"><canvas id="tempChart"></canvas></div>
+        </div>
+        <div class="glass p-6">
+          <h2 class="font-semibold text-lg">Device Information</h2>
+          <p class="text-xs text-slate-400 mt-1 mb-6">
+            Current operating configuration
+          </p>
+          <div class="space-y-5 text-sm">
+            <div class="flex justify-between">
+              <span class="text-slate-400">System</span><b>AERONEX</b>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Mode</span><b id="mode">COOL</b>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Swing</span><b id="swing">OFF</b>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Target</span
+              ><b><span id="targetInfo">24</span> °C</b>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Room</span
+              ><b><span id="roomInfo">32.0</span> °C</b>
+            </div>
+          </div>
+          <a
+            href="remote.html"
+            class="block text-center mt-8 rounded-xl py-3 bg-cyan-500 text-slate-950 font-bold hover:bg-cyan-300"
+          >
+            OPEN SMART REMOTE →
+          </a>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="glass p-6">
+          <h2 class="font-semibold text-lg">Cooling Efficiency</h2>
+          <p class="text-xs text-slate-400 mt-1">
+            Difference between room and target temperature
+          </p>
+          <div class="mt-7 flex justify-between items-end">
+            <div>
+              <div class="text-4xl font-bold text-cyan-300" id="difference">
+                8.0°C
+              </div>
+              <div class="text-xs text-slate-400 mt-2">
+                Temperature difference
+              </div>
+            </div>
+            <div class="text-5xl">❄</div>
+          </div>
+          <div class="h-2 rounded-full bg-slate-800 mt-6 overflow-hidden">
+            <div
+              id="coolBar"
+              class="h-full bg-cyan-400 rounded-full"
+              style="width: 0%"
+            ></div>
+          </div>
+        </div>
+        <div class="glass p-6">
+          <div class="flex justify-between">
+            <h2 class="font-semibold text-lg">System Event Log</h2>
+            <span class="pill">ACTIVITY</span>
+          </div>
+          <div id="logs" class="mt-5 space-y-3 text-xs text-slate-400">
+            <div>Waiting for AERONEX IoT Engine...</div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="text-center text-xs text-slate-600 mt-10">
+        AERONEX • SMART CLIMATE SYSTEM • GEDUNG SRURI ARIPIN<br />
+        INTELLIGENT • CONNECTED • AUTOMATED
+      </footer>
+    </main>
+
+    <script>
+      const WS_URL = "ws://localhost:8080";
+      let socket, reconnectTimer;
+      let historyLabels = [],
+        historyTemps = [];
+      let previousState = null;
+
+      const $ = (id) => document.getElementById(id);
+
+      function log(message) {
+        const box = $("logs");
+        const time = new Date().toLocaleTimeString("id-ID");
+        const item = document.createElement("div");
+        item.textContent = "[" + time + "]  " + message;
+        box.prepend(item);
+        while (box.children.length > 7) box.lastChild.remove();
+      }
+
+      function setConnection(connected) {
+        $("connection").textContent = connected ? "Connected" : "Disconnected";
+        $("sideStatus").textContent = connected ? "Online" : "Offline";
+        $("topDot").className = connected ? "dot on" : "dot";
+        $("sideDot").className = connected ? "dot on" : "dot";
+      }
+
+      function connect() {
+        clearTimeout(reconnectTimer);
+        socket = new WebSocket(WS_URL);
+
+        socket.onopen = () => {
+          setConnection(true);
+          log("Connected to AERONEX IoT Engine");
+        };
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "STATE") updateDashboard(data.state);
+          } catch (e) {
+            console.error("Invalid data:", e);
+          }
+        };
+        socket.onclose = () => {
+          setConnection(false);
+          log("Connection lost. Reconnecting...");
+          reconnectTimer = setTimeout(connect, 3000);
+        };
+        socket.onerror = () => socket.close();
+      }
+
+      const ctx = $("tempChart").getContext("2d");
+      const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: historyLabels,
+          datasets: [
+            {
+              label: "Room Temperature (°C)",
+              data: historyTemps,
+              borderColor: "#42d9f5",
+              backgroundColor: "rgba(66,217,245,.12)",
+              fill: true,
+              tension: 0.4,
+              pointRadius: 2,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "#b8cadd" } } },
+          scales: {
+            x: {
+              ticks: { color: "#8299ad" },
+              grid: { color: "rgba(255,255,255,.05)" },
+            },
+            y: {
+              ticks: { color: "#8299ad" },
+              grid: { color: "rgba(255,255,255,.07)" },
+            },
+          },
+        },
+      });
+
+      function updateDashboard(s) {
+        const power = !!s.power;
+        const room = Number(s.roomTemp ?? 32);
+        const target = Number(s.temp ?? 24);
+        const usage = Number(s.powerUsage ?? 0);
+        const rpm = Number(s.fanRpm ?? 0);
+        const fan = s.fan ?? "AUTO";
+        const mode = s.mode ?? "COOL";
+        const swing = !!s.swing;
+
+        $("power").textContent = power ? "ON" : "OFF";
+        $("power").style.color = power ? "#34d399" : "#fb7185";
+        $("powerLabel").textContent = power ? "Running" : "Standby";
+        $("roomTemp").textContent = room.toFixed(1);
+        $("targetTemp").textContent = target;
+        $("fan").textContent = fan;
+        $("rpm").textContent = Math.round(rpm);
+        $("usage").textContent = usage.toFixed(2);
+        $("mode").textContent = mode;
+        $("swing").textContent = swing ? "ON" : "OFF";
+        $("targetInfo").textContent = target;
+        $("roomInfo").textContent = room.toFixed(1);
+
+        const diff = Math.max(0, room - target);
+        $("difference").textContent = diff.toFixed(1) + "°C";
+        $("coolBar").style.width = Math.min(100, (diff / 20) * 100) + "%";
+
+        historyLabels.push(new Date().toLocaleTimeString("id-ID"));
+        historyTemps.push(room);
+        if (historyLabels.length > 20) {
+          historyLabels.shift();
+          historyTemps.shift();
+        }
+        chart.update("none");
+
+        if (previousState) {
+          if (previousState.power !== power)
+            log("AC power " + (power ? "ON" : "OFF"));
+          if (previousState.mode !== mode) log("Mode changed to " + mode);
+          if (previousState.fan !== fan) log("Fan speed changed to " + fan);
+          if (previousState.swing !== swing)
+            log("Swing " + (swing ? "ON" : "OFF"));
+          if (previousState.temp !== target)
+            log("Target temperature: " + target + "°C");
+        }
+        previousState = { power, mode, fan, swing, temp: target };
+      }
+
+      connect();
+    </script>
+  </body>
+</html>

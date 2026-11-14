@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AERONEX | Smart Remote</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: #eaf5ff;
+        font-family: Inter, Arial, sans-serif;
+        background:
+          radial-gradient(ellipse at 70% 0%, #16425e 0%, transparent 40%),
+          radial-gradient(ellipse at 0% 90%, #102b43 0%, transparent 45%),
+          #07111f;
+        min-height: 100vh;
+      }
+      .glass {
+        background: rgba(17, 35, 54, 0.78);
+        border: 1px solid #8bbbd326;
+        backdrop-filter: blur(18px);
+        border-radius: 20px;
+        box-shadow: 0 12px 40px #0003;
+      }
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 245px;
+        padding: 28px 20px;
+        background: rgba(7, 17, 31, 0.9);
+        border-right: 1px solid #ffffff14;
+        z-index: 5;
+      }
+      .main {
+        margin-left: 245px;
+        padding: 32px;
+        max-width: 1700px;
+      }
+      .nav {
+        display: flex;
+        gap: 13px;
+        align-items: center;
+        padding: 14px;
+        border-radius: 12px;
+        color: #9eb4c9;
+        text-decoration: none;
+        margin: 8px 0;
+      }
+      .nav:hover,
+      .nav.active {
+        background: #12334b;
+        color: #5de5ff;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        background: #fb7185;
+      }
+      .dot.on {
+        background: #34d399;
+        box-shadow: 0 0 12px #34d399;
+      }
+      .remote {
+        width: min(100%, 390px);
+        margin: auto;
+        padding: 25px 24px 30px;
+        border-radius: 38px;
+        background: linear-gradient(145deg, #1e344a, #0a1728);
+        border: 1px solid #79c7e64a;
+        box-shadow:
+          0 25px 70px #0009,
+          inset 0 1px #ffffff22;
+      }
+      .remote-head {
+        text-align: center;
+        letter-spacing: 5px;
+        font-weight: 900;
+        color: #67e8f9;
+      }
+      .remote-sub {
+        text-align: center;
+        font-size: 10px;
+        color: #91a9bd;
+        letter-spacing: 2px;
+        margin-top: 5px;
+      }
+      .lcd {
+        background: linear-gradient(135deg, #b9d9cf, #8db5a8);
+        color: #123b38;
+        border-radius: 15px;
+        padding: 17px 18px;
+        box-shadow: inset 0 3px 12px #173b3533;
+        margin-top: 25px;
+        border: 2px solid #d7eee5;
+      }
+      .lcd-temp {
+        font-size: 65px;
+        font-weight: 800;
+        line-height: 1;
+        font-family: monospace;
+      }
+      .lcd-info {
+        display: flex;
+        justify-content: space-between;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 700;
+        margin-top: 16px;
+      }
+      .btn {
+        min-height: 58px;
+        border: 1px solid #6b8ba044;
+        border-radius: 15px;
+        background: linear-gradient(145deg, #203c55, #10243a);
+        color: #d9efff;
+        font-weight: 700;
+        transition: 0.15s;
+        box-shadow: 0 5px 12px #0004;
+      }
+      .btn:hover {
+        border-color: #50dff5;
+        color: #6ee7f9;
+        transform: translateY(-2px);
+      }
+      .btn:active {
+        transform: scale(0.96);
+      }
+      .btn.power {
+        background: linear-gradient(145deg, #713044, #3e1d32);
+        color: #ff9eae;
+      }
+      .btn.power.active {
+        background: linear-gradient(145deg, #087c68, #064b4c);
+        color: #9fffe1;
+      }
+      .btn.primary {
+        background: linear-gradient(145deg, #087e9d, #07506e);
+        color: white;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .round {
+        border-radius: 50%;
+        width: 64px;
+        height: 64px;
+        font-size: 23px;
+      }
+      .control-label {
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: #8ca8bd;
+        text-align: center;
+        margin: 23px 0 10px;
+      }
+      .pill {
+        font-size: 11px;
+        padding: 6px 10px;
+        border-radius: 30px;
+        background: #15394b;
+        color: #64e7ff;
+      }
+      @media (max-width: 850px) {
+        .sidebar {
+          position: relative;
+          width: 100%;
+          height: auto;
+          padding: 14px;
+        }
+        .sidebar .links {
+          display: flex;
+          flex-wrap: wrap;
+        }
+        .main {
+          margin: 0;
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="mb-9">
+        <div class="text-3xl font-black tracking-widest text-cyan-300">
+          AERONEX
+        </div>
+        <div class="text-xs tracking-widest text-slate-400 mt-2">
+          SMART CLIMATE SYSTEM
+        </div>
+        <div class="text-xs text-slate-500 mt-1">GEDUNG SRURI ARIPIN</div>
+      </div>
+      <div class="text-xs text-slate-500 uppercase tracking-widest mb-3">
+        Navigation
+      </div>
+      <div class="links">
+        <a class="nav" href="index.html">◈ Command Center</a>
+        <a class="nav" href="ac.html">◉ Live View</a>
+        <a class="nav active" href="remote.html">⌘ Smart Remote</a>
+      </div>
+      <div class="glass p-4 mt-10">
+        <div class="text-xs text-slate-400">SYSTEM STATUS</div>
+        <div class="flex items-center gap-2 mt-3">
+          <span class="dot" id="sideDot"></span
+          ><span id="sideStatus" class="text-sm">Connecting...</span>
+        </div>
+        <div class="text-xs text-slate-500 mt-3">AERONEX IoT Engine</div>
+      </div>
+      <div class="absolute bottom-7 left-6 text-xs text-slate-600">
+        INTELLIGENT • CONNECTED • AUTOMATED
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="flex flex-wrap justify-between items-center gap-4 mb-8">
+        <div>
+          <div class="text-xs text-cyan-300 tracking-[.3em] mb-2">
+            SMART BUILDING TECHNOLOGY
+          </div>
+          <h1 class="text-3xl md:text-4xl font-bold">AERONEX Smart Remote</h1>
+          <p class="text-slate-400 mt-2">
+            Wireless virtual air conditioner controller
+          </p>
+        </div>
+        <div class="glass px-5 py-3">
+          <div class="text-xs text-slate-400">WEBSOCKET STATUS</div>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="dot" id="topDot"></span
+            ><span id="connection">Disconnected</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div class="glass p-5 md:p-7">
+          <div class="remote">
+            <div class="remote-head text-2xl">AERONEX</div>
+            <div class="remote-sub">SMART CLIMATE REMOTE</div>
+
+            <div class="lcd">
+              <div class="flex justify-between items-center text-xs font-bold">
+                <span id="lcdMode">COOL MODE</span>
+                <span id="lcdPower">● OFF</span>
+              </div>
+              <div class="flex items-end gap-1 mt-3">
+                <div class="lcd-temp" id="lcdTemp">24</div>
+                <div class="text-xl font-bold mb-2">°C</div>
+              </div>
+              <div class="lcd-info">
+                <span>FAN: <span id="lcdFan">AUTO</span></span>
+                <span>SWING: <span id="lcdSwing">OFF</span></span>
+              </div>
+            </div>
+
+            <div class="control-label">POWER CONTROL</div>
+            <button
+              class="btn power w-full"
+              id="powerBtn"
+              onclick="sendAction('power')"
+            >
+              ⏻ &nbsp; POWER
+            </button>
+
+            <div class="control-label">TEMPERATURE CONTROL</div>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                class="btn round mx-auto"
+                onclick="sendAction('temp_down')"
+              >
+                −
+              </button>
+              <button class="btn round mx-auto" onclick="sendAction('temp_up')">
+                +
+              </button>
+            </div>
+            <div class="text-center text-xs text-slate-400 mt-3">
+              DECREASE &nbsp;&nbsp;&nbsp; INCREASE
+            </div>
+
+            <div class="control-label">OPERATING SETTINGS</div>
+            <div class="grid grid-cols-2 gap-3">
+              <button class="btn primary" onclick="sendAction('mode')">
+                ◈ MODE
+              </button>
+              <button class="btn" onclick="sendAction('fan')">
+                ✥ FAN SPEED
+              </button>
+              <button class="btn col-span-2" onclick="sendAction('swing')">
+                ↕ SWING
+              </button>
+            </div>
+
+            <div
+              class="text-center text-xs text-slate-500 mt-7 tracking-widest"
+            >
+              INTELLIGENT • CONNECTED • AUTOMATED
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-5">
+          <div class="glass p-6">
+            <h2 class="font-semibold text-lg">Live Device Status</h2>
+            <p class="text-xs text-slate-400 mt-1">
+              Real-time AC configuration
+            </p>
+            <div class="grid grid-cols-2 gap-4 mt-6">
+              <div class="bg-slate-900/50 rounded-xl p-4">
+                <div class="text-xs text-slate-400">ROOM TEMP</div>
+                <div class="text-2xl font-bold mt-2">
+                  <span id="roomTemp">32.0</span>°C
+                </div>
+              </div>
+              <div class="bg-slate-900/50 rounded-xl p-4">
+                <div class="text-xs text-slate-400">TARGET TEMP</div>
+                <div class="text-2xl font-bold mt-2">
+                  <span id="targetTemp">24</span>°C
+                </div>
+              </div>
+              <div class="bg-slate-900/50 rounded-xl p-4">
+                <div class="text-xs text-slate-400">FAN SPEED</div>
+                <div class="text-2xl font-bold mt-2" id="fan">AUTO</div>
+              </div>
+              <div class="bg-slate-900/50 rounded-xl p-4">
+                <div class="text-xs text-slate-400">POWER USAGE</div>
+                <div class="text-2xl font-bold mt-2">
+                  <span id="usage">0.00</span> kW
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass p-6">
+            <h2 class="font-semibold text-lg">Control Information</h2>
+            <div class="space-y-4 text-sm mt-5">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Device</span><b>AERONEX AC UNIT</b>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Operating mode</span
+                ><b id="modeInfo">COOL</b>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Swing status</span
+                ><b id="swingInfo">OFF</b>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Connection</span
+                ><b id="connectionInfo">Offline</b>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass p-6">
+            <h2 class="font-semibold">How to use</h2>
+            <p class="text-sm text-slate-400 leading-7 mt-3">
+              Gunakan tombol POWER untuk menyalakan atau mematikan AC. Atur suhu
+              menggunakan tombol + dan −. MODE digunakan untuk mengganti mode
+              operasi, FAN untuk mengatur kecepatan kipas, dan SWING untuk
+              mengaktifkan atau menonaktifkan gerakan kisi AC.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <footer class="text-center text-xs text-slate-600 mt-10">
+        AERONEX • SMART CLIMATE SYSTEM • GEDUNG SRURI ARIPIN<br />
+        INTELLIGENT • CONNECTED • AUTOMATED
+      </footer>
+    </main>
+
+    <script>
+      const WS_URL = "ws://localhost:8080";
+      let socket, reconnectTimer;
+      let latestState = null;
+      const $ = (id) => document.getElementById(id);
+
+      function setConnection(ok) {
+        $("connection").textContent = ok ? "Connected" : "Disconnected";
+        $("sideStatus").textContent = ok ? "Online" : "Offline";
+        $("connectionInfo").textContent = ok ? "Online" : "Offline";
+        $("topDot").className = ok ? "dot on" : "dot";
+        $("sideDot").className = ok ? "dot on" : "dot";
+        $("powerBtn").disabled = !ok;
+      }
+
+      function connect() {
+        clearTimeout(reconnectTimer);
+        socket = new WebSocket(WS_URL);
+        socket.onopen = () => setConnection(true);
+        socket.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.type === "STATE") {
+              latestState = data.state;
+              updateRemote(data.state);
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        };
+        socket.onclose = () => {
+          setConnection(false);
+          reconnectTimer = setTimeout(connect, 3000);
+        };
+        socket.onerror = () => socket.close();
+      }
+
+      function sendAction(action) {
+        if (!socket || socket.readyState !== WebSocket.OPEN) {
+          alert("AERONEX belum terhubung ke server!");
+          return;
+        }
+        if (["temp_up", "temp_down"].includes(action) && !latestState?.power) {
+          alert("Nyalakan AC terlebih dahulu untuk mengatur suhu.");
+          return;
+        }
+        socket.send(
+          JSON.stringify({
+            type: "ACTION",
+            action: action,
+          }),
+        );
+      }
+
+      function updateRemote(s) {
+        const power = !!s.power;
+        const temp = Number(s.temp ?? 24);
+        const fan = s.fan ?? "AUTO";
+        const mode = s.mode ?? "COOL";
+        const swing = !!s.swing;
+
+        $("lcdTemp").textContent = temp;
+        $("lcdMode").textContent = mode + " MODE";
+        $("lcdPower").textContent = power ? "● ON" : "● OFF";
+        $("lcdPower").style.color = power ? "#075d4a" : "#8b3434";
+        $("lcdFan").textContent = fan;
+        $("lcdSwing").textContent = swing ? "ON" : "OFF";
+
+        $("powerBtn").classList.toggle("active", power);
+        $("roomTemp").textContent = Number(s.roomTemp ?? 32).toFixed(1);
+        $("targetTemp").textContent = temp;
+        $("fan").textContent = fan;
+        $("usage").textContent = Number(s.powerUsage ?? 0).toFixed(2);
+        $("modeInfo").textContent = mode;
+        $("swingInfo").textContent = swing ? "ON" : "OFF";
+      }
+
+      connect();
+    </script>
+  </body>
+</html>

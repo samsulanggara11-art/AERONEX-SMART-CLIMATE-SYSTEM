@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AERONEX | Live View</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: #eaf5ff;
+        font-family: Inter, Arial, sans-serif;
+        background:
+          radial-gradient(ellipse at 70% 0%, #16425e 0%, transparent 40%),
+          radial-gradient(ellipse at 0% 90%, #102b43 0%, transparent 45%),
+          #07111f;
+        min-height: 100vh;
+      }
+      .glass {
+        background: rgba(17, 35, 54, 0.78);
+        border: 1px solid #8bbbd326;
+        backdrop-filter: blur(18px);
+        border-radius: 20px;
+        box-shadow: 0 12px 40px #0003;
+      }
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 245px;
+        padding: 28px 20px;
+        background: rgba(7, 17, 31, 0.9);
+        border-right: 1px solid #ffffff14;
+        z-index: 5;
+      }
+      .main {
+        margin-left: 245px;
+        padding: 32px;
+        max-width: 1700px;
+      }
+      .nav {
+        display: flex;
+        gap: 13px;
+        align-items: center;
+        padding: 14px;
+        border-radius: 12px;
+        color: #9eb4c9;
+        text-decoration: none;
+        margin: 8px 0;
+      }
+      .nav:hover,
+      .nav.active {
+        background: #12334b;
+        color: #5de5ff;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        background: #fb7185;
+      }
+      .dot.on {
+        background: #34d399;
+        box-shadow: 0 0 12px #34d399;
+      }
+      .ac-unit {
+        width: min(100%, 560px);
+        height: 190px;
+        margin: auto;
+        position: relative;
+        border-radius: 25px 25px 35px 35px;
+        background: linear-gradient(145deg, #f7fbff, #b7cad8 48%, #eef5fa);
+        box-shadow:
+          0 25px 55px #0008,
+          inset 0 3px 8px white;
+        border: 1px solid #ffffff;
+      }
+      .ac-front {
+        position: absolute;
+        inset: 12px 18px 35px;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #fff, #dce8f0);
+        box-shadow:
+          inset 0 2px 5px #fff,
+          0 2px 8px #789;
+      }
+      .ac-brand {
+        position: absolute;
+        top: 18px;
+        left: 28px;
+        color: #5a7186;
+        font-size: 10px;
+        letter-spacing: 3px;
+        font-weight: bold;
+      }
+      .ac-lcd {
+        position: absolute;
+        right: 28px;
+        top: 16px;
+        background: #102d3b;
+        color: #65f0ff;
+        border-radius: 6px;
+        padding: 7px 12px;
+        font-family: monospace;
+        box-shadow: 0 0 15px #00cfff55;
+      }
+      .ac-led {
+        position: absolute;
+        right: 18px;
+        top: 22px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #fb7185;
+      }
+      .ac-led.on {
+        background: #34d399;
+        box-shadow: 0 0 12px #34d399;
+      }
+      .louver {
+        position: absolute;
+        left: 25px;
+        right: 25px;
+        bottom: 8px;
+        height: 14px;
+        background: linear-gradient(#8398a9, #344c5d);
+        border-radius: 0 0 12px 12px;
+        transform-origin: top center;
+      }
+      .louver.active {
+        animation: swing 1.5s ease-in-out infinite alternate;
+      }
+      @keyframes swing {
+        from {
+          transform: rotateX(0);
+        }
+        to {
+          transform: rotateX(35deg);
+        }
+      }
+      .air-area {
+        height: 180px;
+        position: relative;
+        overflow: hidden;
+      }
+      .air {
+        position: absolute;
+        top: 0;
+        width: 3px;
+        height: 65px;
+        border-radius: 10px;
+        background: linear-gradient(transparent, #65eaff);
+        opacity: 0;
+        animation: airflow 2.5s linear infinite;
+      }
+      .air.active {
+        opacity: 0.7;
+      }
+      @keyframes airflow {
+        0% {
+          transform: translateY(0) translateX(0);
+          opacity: 0;
+        }
+        20% {
+          opacity: 0.7;
+        }
+        100% {
+          transform: translateY(170px) translateX(25px);
+          opacity: 0;
+        }
+      }
+      .fan-wrap {
+        width: 170px;
+        height: 170px;
+        margin: auto;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        border: 1px solid #3ddcf555;
+        background: radial-gradient(circle, #164b64, #0b1e30);
+      }
+      .rotor {
+        width: 125px;
+        height: 125px;
+        position: relative;
+      }
+      .blade {
+        position: absolute;
+        width: 35px;
+        height: 58px;
+        left: 45px;
+        top: 5px;
+        border-radius: 80% 15% 70% 20%;
+        background: linear-gradient(135deg, #7aeaff, #1686a9);
+        transform-origin: 17px 57px;
+        box-shadow: 0 0 12px #38d9ff55;
+      }
+      .blade:nth-child(2) {
+        transform: rotate(120deg);
+      }
+      .blade:nth-child(3) {
+        transform: rotate(240deg);
+      }
+      .hub {
+        position: absolute;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: #b7f5ff;
+        left: 50px;
+        top: 50px;
+        z-index: 2;
+      }
+      .pill {
+        font-size: 11px;
+        padding: 6px 10px;
+        border-radius: 30px;
+        background: #15394b;
+        color: #64e7ff;
+      }
+      @media (max-width: 850px) {
+        .sidebar {
+          position: relative;
+          width: 100%;
+          height: auto;
+          padding: 14px;
+        }
+        .sidebar .links {
+          display: flex;
+          flex-wrap: wrap;
+        }
+        .main {
+          margin: 0;
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="mb-9">
+        <div class="text-3xl font-black tracking-widest text-cyan-300">
+          AERONEX
+        </div>
+        <div class="text-xs tracking-widest text-slate-400 mt-2">
+          SMART CLIMATE SYSTEM
+        </div>
+        <div class="text-xs text-slate-500 mt-1">GEDUNG SRURI ARIPIN</div>
+      </div>
+      <div class="text-xs text-slate-500 uppercase tracking-widest mb-3">
+        Navigation
+      </div>
+      <div class="links">
+        <a class="nav" href="index.html">◈ Command Center</a>
+        <a class="nav active" href="ac.html">◉ Live View</a>
+        <a class="nav" href="remote.html">⌘ Smart Remote</a>
+      </div>
+      <div class="glass p-4 mt-10">
+        <div class="text-xs text-slate-400">SYSTEM STATUS</div>
+        <div class="flex items-center gap-2 mt-3">
+          <span class="dot" id="sideDot"></span
+          ><span id="sideStatus" class="text-sm">Connecting...</span>
+        </div>
+        <div class="text-xs text-slate-500 mt-3">AERONEX IoT Engine</div>
+      </div>
+      <div class="absolute bottom-7 left-6 text-xs text-slate-600">
+        INTELLIGENT • CONNECTED • AUTOMATED
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="flex flex-wrap justify-between items-center gap-4 mb-8">
+        <div>
+          <div class="text-xs text-cyan-300 tracking-[.3em] mb-2">
+            SMART BUILDING TECHNOLOGY
+          </div>
+          <h1 class="text-3xl md:text-4xl font-bold">AERONEX Live View</h1>
+          <p class="text-slate-400 mt-2">
+            Real-time air conditioning visualization
+          </p>
+        </div>
+        <div class="glass px-5 py-3">
+          <div class="text-xs text-slate-400">WEBSOCKET STATUS</div>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="dot" id="topDot"></span
+            ><span id="connection">Disconnected</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="glass p-6 mb-6">
+        <div class="flex justify-between items-center mb-7">
+          <div>
+            <h2 class="text-lg font-semibold">Indoor AC Visualization</h2>
+            <p class="text-xs text-slate-400 mt-1">
+              Virtual indoor unit • Live simulation
+            </p>
+          </div>
+          <span class="pill" id="acStatus">POWER OFF</span>
+        </div>
+
+        <div class="ac-unit">
+          <div class="ac-front">
+            <div class="ac-brand">AERONEX CLIMATE</div>
+            <div class="ac-lcd"><span id="lcdTemp">24</span>°C</div>
+            <div class="ac-led" id="acLed"></div>
+          </div>
+          <div class="louver" id="louver"></div>
+        </div>
+
+        <div class="air-area mt-2" id="airArea">
+          <div class="air" style="left: 15%; animation-delay: 0s"></div>
+          <div class="air" style="left: 25%; animation-delay: 0.5s"></div>
+          <div class="air" style="left: 35%; animation-delay: 1s"></div>
+          <div class="air" style="left: 45%; animation-delay: 0.3s"></div>
+          <div class="air" style="left: 55%; animation-delay: 1.3s"></div>
+          <div class="air" style="left: 65%; animation-delay: 0.7s"></div>
+          <div class="air" style="left: 75%; animation-delay: 1.6s"></div>
+          <div class="air" style="left: 85%; animation-delay: 0.9s"></div>
+        </div>
+        <div class="text-center text-xs text-slate-400">
+          <span id="airStatus">Airflow inactive</span>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+        <div class="glass p-6 text-center">
+          <div class="text-sm text-slate-400 mb-5">INDOOR FAN</div>
+          <div class="fan-wrap">
+            <div class="rotor" id="rotor">
+              <div class="blade"></div>
+              <div class="blade"></div>
+              <div class="blade"></div>
+              <div class="hub"></div>
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-cyan-300 mt-5">
+            <span id="rpm">0</span> RPM
+          </div>
+          <div class="text-xs text-slate-400 mt-1" id="fanMode">FAN AUTO</div>
+        </div>
+        <div class="glass p-6">
+          <div class="text-sm text-slate-400">POWER CONSUMPTION</div>
+          <div class="mt-7 text-5xl font-bold text-cyan-300">
+            <span id="usage">0.00</span>
+          </div>
+          <div class="text-sm text-slate-400 mt-2">Kilowatt (kW)</div>
+          <div class="h-2 rounded-full bg-slate-800 mt-8 overflow-hidden">
+            <div
+              id="powerBar"
+              class="h-full bg-cyan-400 rounded-full"
+              style="width: 0%"
+            ></div>
+          </div>
+          <div class="text-xs text-slate-500 mt-3">
+            Simulated electrical load
+          </div>
+        </div>
+        <div class="glass p-6">
+          <div class="text-sm text-slate-400">CLIMATE SETTINGS</div>
+          <div class="space-y-5 mt-7 text-sm">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Room temperature</span
+              ><b><span id="roomTemp">32.0</span>°C</b>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Target temperature</span
+              ><b><span id="targetTemp">24</span>°C</b>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Operating mode</span
+              ><b id="mode">COOL</b>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Swing</span><b id="swing">OFF</b>
+            </div>
+          </div>
+          <a
+            href="remote.html"
+            class="block text-center bg-cyan-500 text-slate-950 font-bold rounded-xl py-3 mt-7 hover:bg-cyan-300"
+          >
+            CONTROL AC →
+          </a>
+        </div>
+      </section>
+
+      <section class="glass p-6">
+        <div class="mb-5">
+          <h2 class="font-semibold text-lg">Temperature History</h2>
+          <p class="text-xs text-slate-400 mt-1">Room temperature trend</p>
+        </div>
+        <div style="height: 250px"><canvas id="tempChart"></canvas></div>
+      </section>
+
+      <footer class="text-center text-xs text-slate-600 mt-10">
+        AERONEX • SMART CLIMATE SYSTEM • GEDUNG SRURI ARIPIN<br />
+        INTELLIGENT • CONNECTED • AUTOMATED
+      </footer>
+    </main>
+
+    <script>
+      const WS_URL = "ws://localhost:8080";
+      let socket, reconnectTimer;
+      let labels = [],
+        temperatures = [];
+      let fanAngle = 0,
+        lastFrame = 0,
+        currentRPM = 0;
+      const $ = (id) => document.getElementById(id);
+
+      function connectionStatus(ok) {
+        $("connection").textContent = ok ? "Connected" : "Disconnected";
+        $("sideStatus").textContent = ok ? "Online" : "Offline";
+        $("topDot").className = ok ? "dot on" : "dot";
+        $("sideDot").className = ok ? "dot on" : "dot";
+      }
+
+      function connect() {
+        clearTimeout(reconnectTimer);
+        socket = new WebSocket(WS_URL);
+        socket.onopen = () => connectionStatus(true);
+        socket.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.type === "STATE") update(data.state);
+          } catch (err) {
+            console.error(err);
+          }
+        };
+        socket.onclose = () => {
+          connectionStatus(false);
+          reconnectTimer = setTimeout(connect, 3000);
+        };
+        socket.onerror = () => socket.close();
+      }
+
+      const chart = new Chart($("tempChart"), {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Room Temperature (°C)",
+              data: temperatures,
+              borderColor: "#42d9f5",
+              backgroundColor: "rgba(66,217,245,.12)",
+              fill: true,
+              tension: 0.4,
+              pointRadius: 2,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: "#b8cadd" } } },
+          scales: {
+            x: { ticks: { color: "#8299ad" }, grid: { color: "#ffffff0c" } },
+            y: { ticks: { color: "#8299ad" }, grid: { color: "#ffffff0c" } },
+          },
+        },
+      });
+
+      function update(s) {
+        const power = !!s.power;
+        const room = Number(s.roomTemp ?? 32);
+        const target = Number(s.temp ?? 24);
+        const usage = Number(s.powerUsage ?? 0);
+        currentRPM = Number(s.fanRpm ?? 0);
+        const swing = !!s.swing;
+        const fan = s.fan ?? "AUTO";
+
+        $("acStatus").textContent = power ? "POWER ON" : "POWER OFF";
+        $("acStatus").style.color = power ? "#34d399" : "#fb7185";
+        $("acLed").className = power ? "ac-led on" : "ac-led";
+        $("lcdTemp").textContent = target;
+        $("roomTemp").textContent = room.toFixed(1);
+        $("targetTemp").textContent = target;
+        $("rpm").textContent = Math.round(currentRPM);
+        $("fanMode").textContent = "FAN " + fan;
+        $("usage").textContent = usage.toFixed(2);
+        $("mode").textContent = s.mode ?? "COOL";
+        $("swing").textContent = swing ? "ON" : "OFF";
+
+        $("louver").classList.toggle("active", power && swing);
+        $("airArea")
+          .querySelectorAll(".air")
+          .forEach((el) => {
+            el.classList.toggle("active", power && currentRPM > 0);
+          });
+        $("airStatus").textContent =
+          power && currentRPM > 0 ? "Airflow active" : "Airflow inactive";
+        $("powerBar").style.width = Math.min(100, (usage / 3) * 100) + "%";
+
+        labels.push(new Date().toLocaleTimeString("id-ID"));
+        temperatures.push(room);
+        if (labels.length > 25) {
+          labels.shift();
+          temperatures.shift();
+        }
+        chart.update("none");
+      }
+
+      function animateFan(time) {
+        requestAnimationFrame(animateFan);
+        if (!lastFrame) lastFrame = time;
+        const delta = Math.min((time - lastFrame) / 1000, 0.1);
+        lastFrame = time;
+        if (currentRPM > 0) {
+          fanAngle += currentRPM * 6 * delta;
+          $("rotor").style.transform = "rotate(" + fanAngle + "deg)";
+        }
+      }
+      requestAnimationFrame(animateFan);
+      connect();
+    </script>
+  </body>
+</html>
